@@ -1,6 +1,6 @@
-# [My official portfolio](https://zanniadevweb.github.io/pagesfolio/)
+# [Ausonius Bibliography Generator](https://zanniadevweb.github.io/ausonius_bibliography_generator/)
 
-**Pagesfolio** is built over [Vite](https://vitejs.dev/guide/), [Vuetify 3](https://vuetifyjs.com/) and [Vuejs 3](https://vuejs.org/). It was based upon [Vite Theme Free](https://store.vuetifyjs.com/products/vite-theme-free) from Vuetify official website.
+**Ausonius Bibliography Generator** is built over [Vite](https://vitejs.dev/guide/), [Vuetify 3](https://vuetifyjs.com/) and [Vuejs 3](https://vuejs.org/). It was based upon [Vite Theme Free](https://store.vuetifyjs.com/products/vite-theme-free) from Vuetify official website.
 
 ## Browser Support
 
