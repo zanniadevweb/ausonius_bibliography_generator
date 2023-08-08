@@ -1,0 +1,42 @@
+{
+  "name": "theme-vite-free",
+  "version": "2.0.0",
+  "private": true,
+  "author": {
+    "name": "John Leider",
+    "email": "john@vuetifyjs.com"
+  },
+  "scripts": {
+    "serve": "vite preview",
+    "build": "vite build",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist",
+    "dev": "vite",
+    "lint": "eslint --fix",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@mdi/font": "5.9.55",
+    "roboto-fontface": "*",
+    "three": "^0.155.0",
+    "vue": "^3.3.4",
+    "vuetify": "^3.3.9",
+    "webfontloader": "^1.0.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^3.0.3",
+    "archiver": "^5.3.1",
+    "conventional-changelog": "^4.0.0",
+    "eslint": "^8.0.1",
+    "eslint-config-standard": "^17.0.0",
+    "eslint-plugin-import": "^2.25.2",
+    "eslint-plugin-n": "^15.0.0",
+    "eslint-plugin-promise": "^6.0.0",
+    "eslint-plugin-vue": "^9.7.0",
+    "gh-pages": "^5.0.0",
+    "shelljs": "^0.8.5",
+    "vite": "^3.0.8",
+    "vite-plugin-eslint": "^1.8.1",
+    "vite-plugin-vuetify": "^1.0.0-alpha.12"
+  }
+}
