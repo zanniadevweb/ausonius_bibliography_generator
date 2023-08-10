@@ -137,31 +137,33 @@
                     </v-btn>
                   </v-container>
                   <v-divider class="my-12" />
+                  <v-container>
+                  <v-row justify="space-between">
+                    <h2>Résultat :</h2>
+                    <!-- <v-btn
+                      prepend-icon="mdi-content-copy"
+                      text="Copier Résultat"
+                      @click="copyTextFromInput"
+                    /> -->
+                  </v-row>
+                </v-container>
                   <v-card color="white">
                     <v-container>
-                      <v-row justify="space-between">
-                        <h2>Résultat :</h2>
-                        <v-btn
-                          prepend-icon="mdi-content-copy"
-                          text="Copier Résultat"
-                          @click="copyTextFromInput"
-                        />
-                      </v-row>
                       <v-container>
-                        <h3>
-                          <input
-                            id="spanResult"
-                            style="font-family: 'Arial';
-                            color:black;
-                            font-size: 1em;
-                            border: none;
-                            outline: none;
-                            width: 100%;
-                            font-weight: normal"
-                            value="..."
-                            readonly
-                          >
-                        </h3>
+                        <input
+                          id="inputResult"
+                          style="font-family: 'Arial';
+                          color:black;
+                          font-size: 1em;
+                          border: none;
+                          outline: none;
+                          width: 100%;
+                          display: none;
+                          font-weight: normal"
+                          value="..."
+                          readonly
+                        >
+                        <span id="spanResultHtml" style="font-family: 'Arial'; font-size: 1em; font-weight: normal" />
                       </v-container>
                     </v-container>
                   </v-card>
@@ -467,20 +469,36 @@
         let wholeBibliographicReference = ''
         if (this.selectIsBook && this.checkboxInsidePublication) {
           wholeBibliographicReference = this.bibliographicReferenceInsidePublication +
-            ' in : ' +
+            ' in&nbsp;: ' +
             this.bibliographicReferenceMainPublication
         } else {
           wholeBibliographicReference = this.bibliographicReferenceMainPublication
         }
 
-        document.getElementById('spanResult').value = wholeBibliographicReference
+        wholeBibliographicReference = wholeBibliographicReference.replaceAll(' ,', '')
+
+        document.getElementById('inputResult').value = this.removeTags(wholeBibliographicReference)
+        document.getElementById('spanResultHtml').innerHTML = wholeBibliographicReference
       },
       copyTextFromInput () {
-        const copyText = document.getElementById('spanResult')
+        const copyText = document.getElementById('inputResult')
+        copyText.style.display = ''
         copyText.select()
         copyText.setSelectionRange(0, 99999) // For mobile devices
         document.execCommand('copy')
         alert('Copied the text: ' + copyText.value)
+        copyText.style.display = 'none'
+      },
+      removeTags (str) {
+        if ((str === null) || (str === '')) {
+          return false
+        } else {
+          str = str.toString()
+        }
+
+        str = str.replaceAll('&nbsp;', ' ')
+
+        return str.replace(/(<([^>]+)>)/ig, '')
       },
       hideIsContributionCheckBox (event) {
         if (event === 'Livre') {
@@ -541,7 +559,7 @@
         return arrayOfElements.join(', ')
       },
       createMainPublication () {
-        const arr = [this.selectAuthorsMain,
+        const arr = [this.selectAuthorsMain.length > 0 ? this.selectAuthorsMain : 's.n. ',
                      this.inputEdOrDirOrCollMain,
                      '[' + this.inputDateFirstMain + ']',
                      '(' + this.inputDateMain + ')',
@@ -564,7 +582,7 @@
         return str
       },
       createInsidePublication () {
-        const arr = [this.selectAuthorsInside,
+        const arr = [this.selectAuthorsMain.length > 0 ? this.selectAuthorsMain : 's.n. ',
                      this.inputEdOrDirOrCollInside,
                      this.inputDateInside,
                      this.inputDateFirstInside,
