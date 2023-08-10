@@ -96,8 +96,11 @@
                       <v-col cols="auto">
                         <v-responsive width="300">
                           <v-text-field
-                            id="isInputPPNFilled"
+                            id="inputPPN"
                             placeholder="Ex. de valeur : 170583236"
+                            type="number"
+                            pattern="[0-9]*"
+                            inputmode="numeric"
                             class="text-black font-weight-black"
                             @update:modelValue="disableBtnConfirmPpn($event)"
                           />
@@ -138,15 +141,15 @@
                   </v-container>
                   <v-divider class="my-12" />
                   <v-container>
-                  <v-row justify="space-between">
-                    <h2>Résultat :</h2>
-                    <!-- <v-btn
-                      prepend-icon="mdi-content-copy"
-                      text="Copier Résultat"
-                      @click="copyTextFromInput"
-                    /> -->
-                  </v-row>
-                </v-container>
+                    <v-row justify="space-between">
+                      <h2>Résultat :</h2>
+                      <!-- <v-btn
+                        prepend-icon="mdi-content-copy"
+                        text="Copier Résultat"
+                        @click="copyTextFromInput"
+                      /> -->
+                    </v-row>
+                  </v-container>
                   <v-card color="white">
                     <v-container>
                       <v-container>
@@ -378,22 +381,22 @@
 
     <v-footer>
       <v-container class="text-center">
+        <v-container>
+          Mise à jour du 02/03/2023 : Ajout fonctionnalité interrogation du
+          SUDOC via un n°PPN d'ouvrage pour pré-remplir les champs. Aucune case
+          ne peut être cochée en ce but. Seuls les livres sont concernés par cette fonctionnalité.
           <v-container>
-            Mise à jour du 02/03/2023 : Ajout fonctionnalité interrogation du
-            SUDOC via un n°PPN d'ouvrage pour pré-remplir les champs. Aucune case
-            ne peut être cochée en ce but. Seuls les livres sont concernés par cette fonctionnalité.
-          <v-container>
-          <li>Développeur :
-            <a
-              style="color: dodgerblue; text-decoration: none; font-weight: bold"
-              href="https://ausonius.u-bordeaux-montaigne.fr/annuaire?chercheur=346"
-              target="_blank"
-            >
-              Alexandre Zanni (Doctorant Archéologie, UMR 5607 Ausonius)
-            </a>
-          </li>
-          <li>Consultant et testeur : Julien Gravier (Doctorant Archéologie, UMR 5607 Ausonius)</li>
-        </v-container>
+            <li>Développeur :
+              <a
+                style="color: dodgerblue; text-decoration: none; font-weight: bold"
+                href="https://ausonius.u-bordeaux-montaigne.fr/annuaire?chercheur=346"
+                target="_blank"
+              >
+                Alexandre Zanni (Doctorant Archéologie, UMR 5607 Ausonius)
+              </a>
+            </li>
+            <li>Consultant et testeur : Julien Gravier (Doctorant Archéologie, UMR 5607 Ausonius)</li>
+          </v-container>
         </v-container>
         <v-container>
           Copyright &copy; {{ (new Date()).getFullYear() }} Alexandre ZANNI
@@ -405,6 +408,7 @@
 
 <script>
   import { defineComponent } from 'vue'
+  import axios from 'axios'
 
   // https://vuetifyjs.com/en/components/combobox/
   // https://pictogrammers.github.io/@mdi/font/1.1.34/
@@ -418,7 +422,7 @@
         checkboxInsidePublication: false,
         inputShortCitationMain: 'Non',
         inputShortCitationBool: false,
-        isInputPPNUnfilled: true,
+        isInputPPNUnfilled: false, // TODO : true
         bibliographicReferenceInsidePublication: [],
         selectAuthorsInside: [],
         itemsAuthorsInside: [],
@@ -445,6 +449,8 @@
         inputDateElectronicConsultMain: '',
         inputDoiOrUrlMain: '',
         inputUrlMain: '',
+        programmaticAuthors: [],
+        jsonData: [],
       }
     },
     mounted () {
@@ -476,6 +482,8 @@
         }
 
         wholeBibliographicReference = wholeBibliographicReference.replaceAll(' ,', '')
+        wholeBibliographicReference = wholeBibliographicReference.replaceAll(', .', '.')
+        wholeBibliographicReference = wholeBibliographicReference.replaceAll(':,', ':')
 
         document.getElementById('inputResult').value = this.removeTags(wholeBibliographicReference)
         document.getElementById('spanResultHtml').innerHTML = wholeBibliographicReference
@@ -560,22 +568,22 @@
       },
       createMainPublication () {
         const arr = [this.selectAuthorsMain.length > 0 ? this.selectAuthorsMain : 's.n. ',
-                     this.inputEdOrDirOrCollMain,
-                     '[' + this.inputDateFirstMain + ']',
-                     '(' + this.inputDateMain + ')',
-                     this.inputPagesMain,
-                     this.inputEditorMain,
-                     this.inputNumberEditorMain,
-                     this.inputTitleMain,
-                     this.inputLocationMain,
-                     this.inputBonusInfoEditionMain,
-                     this.inputRomanNumberMain,
-                     this.inputGenreMain,
-                     this.inputUniversityMain,
-                     ' [En ligne], mis en ligne le ' + this.inputDateElectronicUploadMain,
-                     'consulté le ' + this.inputDateElectronicConsultMain,
-                     ' :  ' + this.inputDoiOrUrlMain,
-                     this.inputUrlMain]
+                     this.inputEdOrDirOrCollMain ? this.inputEdOrDirOrCollMain : '',
+                     this.inputDateFirstMain ? '[' + this.inputDateFirstMain + ']' : '',
+                     this.inputDateMain ? '(' + this.inputDateMain + ')&nbsp;:' : '(s.d.)&nbsp;:',
+                     this.inputPagesMain ? this.inputPagesMain : '',
+                     this.inputEditorMain ? this.inputEditorMain : '',
+                     this.inputNumberEditorMain ? this.inputNumberEditorMain : '',
+                     this.inputTitleMain ? '<i>' + this.inputTitleMain + '</i>' : 's.t.',
+                     this.inputLocationMain ? this.inputLocationMain : '',
+                     this.inputBonusInfoEditionMain ? this.inputBonusInfoEditionMain : '',
+                     this.inputRomanNumberMain ? this.inputRomanNumberMain : '',
+                     this.inputGenreMain ? this.inputGenreMain : '',
+                     this.inputUniversityMain ? this.inputUniversityMain : '',
+                     this.inputDateElectronicUploadMain ? ' [En ligne], mis en ligne le ' + this.inputDateElectronicUploadMain : '',
+                     this.inputDateElectronicConsultMain ? 'consulté le ' + this.inputDateElectronicConsultMain : '',
+                     this.inputDoiOrUrlMain ? ' :  ' + this.inputDoiOrUrlMain : '',
+                     this.inputUrlMain ? this.inputUrlMain : '']
 
         const str = arr.join(', ') + '.'
 
@@ -583,14 +591,178 @@
       },
       createInsidePublication () {
         const arr = [this.selectAuthorsMain.length > 0 ? this.selectAuthorsMain : 's.n. ',
-                     this.inputEdOrDirOrCollInside,
-                     this.inputDateInside,
-                     this.inputDateFirstInside,
-                     this.inputTitleInside]
+                     this.inputEdOrDirOrCollInside ? this.inputEdOrDirOrCollInside : '',
+                     this.inputDateInside ? this.inputDateInside : '',
+                     this.inputDateFirstInside ? this.inputDateFirstInside : '',
+                     this.inputTitleInside ? this.inputTitleInside : 's.t.']
 
         const str = arr.join(', ')
 
         return str
+      },
+      getXmlByPPN (callback) {
+        const sudocPPN = document.getElementById('inputPPN').value
+        if (sudocPPN !== '') {
+          const url = 'https://www.sudoc.fr/' + sudocPPN + '.xml'
+          axios
+            .get(url)
+            .then(response => {
+              // this.jsonData = response.data
+              if (response.statusText === '200') {
+                console.log('FETCHED RESSOURCE VIA SUDOC API : ' + url)
+                const responseXml = response.data
+                const parser = new DOMParser()
+                const xmlDoc = parser.parseFromString(responseXml, 'text/xml')
+                const dataFields = xmlDoc.getElementsByTagName('datafield')
+                const serializedDataFields = []
+
+                for (let iRec = 0; iRec < dataFields.length; iRec++) {
+                  const stringifiedDataField = dataFields[iRec].outerHTML
+                  serializedDataFields.push(stringifiedDataField.replaceAll('tag', 'id'))
+                }
+                let htmlDataFields = ''
+                htmlDataFields = this.stringToHTML(serializedDataFields.join())
+                if (document.getElementById('resultInnerContainerSudocApi') === null) {
+                  document.getElementById('resultOuterContainerSudocApi').innerHTML = '<div id="resultInnerContainerSudocApi">...</div>'
+                }
+                document.getElementById('resultInnerContainerSudocApi').outerHTML = htmlDataFields.innerHTML
+                this.fillsBiblioInputsBook(htmlDataFields)
+                this.buildReference()
+              }
+            }).catch(error => {
+              console.error({ error })
+            })
+        }
+      },
+      stringToHTML (str) {
+        const dom = document.createElement('fakeDiv')
+        dom.innerHTML = str
+        return dom
+      },
+      fillsBiblioInputsBook (htmlDataFields) {
+        document.getElementById('checkboxIsElectronicDocument').checked = false
+        document.getElementById('checkboxInsidePublication').checked = false
+        document.getElementById('inputShortCitationMain').value = 1
+        document.getElementById('inputPagesMain').value = ''
+        document.getElementById('inputDateFirstMain').value = ''
+        document.getElementById('inputBonusInfoEditionMain').value = ''
+        document.getElementById('inputRomanNumberMain').value = ''
+
+        let title = ''
+        let edOrDirOrColl = 'éd.'
+        let datePub = ''
+        let location = ''
+        let editor = ''
+        let numberEditor = ''
+        let authorsTag = []
+        let genre = ''
+        let university = ''
+        authorsTag = ['700', '701', '702']
+        if (document.getElementById('200') !== null && document.getElementById('200').children.length > 0) {
+          title = this.getAllChildrenValues(document.getElementById('200').children, 'f')
+          edOrDirOrColl = this.getSingleChildValue(document.getElementById('200').children, 'f')
+          if (this.getSingleChildValue(document.getElementById('200').children, 'f').includes('edited by')) {
+            edOrDirOrColl = 'éd.'
+          }
+          if (this.getSingleChildValue(document.getElementById('200').children, 'f').includes('sous la direction')) {
+            edOrDirOrColl = 'dir.'
+          }
+          if (this.getSingleChildValue(document.getElementById('200').children, 'g').includes('sous la direction')) {
+            edOrDirOrColl = 'dir.'
+          }
+        }
+        if (document.getElementById('210') !== null && document.getElementById('210').children.length > 0) {
+          location = this.getSingleChildValue(document.getElementById('210').children, 'a').replace('.', '')
+          datePub = this.getSingleChildValue(document.getElementById('210').children, 'd')
+        }
+        if (document.getElementById('214') !== null && document.getElementById('214').children.length > 0) {
+          location = this.getSingleChildValue(document.getElementById('214').children, 'a').replace('.', '')
+          datePub = this.getSingleChildValue(document.getElementById('214').children, 'd')
+        }
+        if (document.getElementById('225') !== null && document.getElementById('225').children.length > 0) {
+          editor = this.getSingleChildValue(document.getElementById('225').children, 'a')
+          numberEditor = this.getSingleChildValue(document.getElementById('225').children, 'v')
+        }
+        if (document.getElementById('461') !== null && document.getElementById('461').children.length > 0) {
+          editor = this.getSingleChildValue(document.getElementById('461').children, 't')
+          numberEditor = this.getSingleChildValue(document.getElementById('461').children, 'v')
+        }
+        if (this.programmaticAuthors.length === 0) {
+          for (let iAuthorsTag = 0; authorsTag.length; iAuthorsTag++) {
+            if (document.getElementById(authorsTag[iAuthorsTag]) !== null &&
+              document.getElementById(authorsTag[iAuthorsTag]).children.length > 0) {
+              this.recursiveGetAllAuthors(authorsTag[iAuthorsTag])
+            }
+            if (iAuthorsTag + 1 === authorsTag.length) {
+              break
+            }
+          }
+        }
+        if (document.getElementById('328') !== null && document.getElementById('328').children.length > 0) {
+          genre = this.getSingleChildValue(document.getElementById('328').children, 'b')
+        }
+        if (document.getElementById('711') !== null && document.getElementById('711').children.length > 0) {
+          university = this.getSingleChildValue(document.getElementById('711').children, 'a')
+        }
+        this.inputBookOrArticle = 'Livre' // L'API ne permet pas de distinguer Ouvrage et Article sur le SUDOC.
+        if (this.inputTitleMain) { this.inputTitleMain = title }
+        this.inputEdOrDirOrCollMain = edOrDirOrColl
+        this.inputDateMain = datePub
+        this.inputLocationMain = location
+        this.inputEditorMain = editor
+        this.inputNumberEditorMain = numberEditor
+        this.inputGenreMain = genre
+        this.inputUniversityMain = university
+      },
+      recursiveGetAllAuthors (tagId) {
+        let lastName = ''
+        let firstName = ''
+        const firstNamesArray = []
+        if (document.getElementById(tagId) !== null) {
+          lastName = this.getSingleChildValue(document.getElementById(tagId).children, 'a')
+          firstName = this.getSingleChildValue(document.getElementById(tagId).children, 'b')
+          if (firstName.split(' ').length > 0) {
+            const firstNames = firstName.split(' ')
+            for (let iFirstNames = 0; iFirstNames < firstNames.length; iFirstNames++) {
+              firstNamesArray.push((firstNames[iFirstNames].slice(0, 1)))
+            }
+          } else {
+            firstNamesArray.push((firstName.slice(0, 1)))
+          }
+          this.programmaticAuthors.push(lastName + ', ' + firstNamesArray.join('. ') + '.')
+          this.selectAuthorsMain = this.programmaticAuthors
+
+          document.getElementById(tagId).parentNode.removeChild(document.getElementById(tagId))
+          if (document.getElementById(tagId) !== null && document.getElementById(tagId).children.length > 0) {
+            this.recursiveGetAllAuthors(tagId)
+          }
+        }
+      },
+      getAllChildrenValues (children, subFieldCodeToExclude) {
+        const childrenValues = []
+        let childOuterHTML = ''
+        let childInnerHTML = ''
+        for (let iChildren = 0; iChildren < children.length; iChildren++) {
+          childOuterHTML = children[iChildren].outerHTML
+          childInnerHTML = children[iChildren].innerHTM
+          if (!(childOuterHTML.includes('code="' + subFieldCodeToExclude + '"'))) {
+            childrenValues.push(childInnerHTML)
+          }
+        }
+        return childrenValues.join(' ')
+      },
+      getSingleChildValue (children, subFieldCodeToInclude) {
+        const childrenValues = []
+        let childOuterHTML = ''
+        let childInnerHTML = ''
+        for (let iChildren = 0; iChildren < children.length; iChildren++) {
+          childOuterHTML = children[iChildren].outerHTML
+          childInnerHTML = children[iChildren].innerHTML
+          if ((childOuterHTML.includes('code="' + subFieldCodeToInclude + '"'))) {
+            childrenValues.push(childInnerHTML)
+          }
+        }
+        return childrenValues.join(' ')
       },
     },
   })
