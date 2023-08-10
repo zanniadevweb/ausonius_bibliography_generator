@@ -422,7 +422,7 @@
         checkboxInsidePublication: false,
         inputShortCitationMain: 'Non',
         inputShortCitationBool: false,
-        isInputPPNUnfilled: false, // TODO : true
+        isInputPPNUnfilled: true,
         bibliographicReferenceInsidePublication: [],
         selectAuthorsInside: [],
         itemsAuthorsInside: [],
