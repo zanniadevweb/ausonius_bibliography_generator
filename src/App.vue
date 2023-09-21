@@ -42,7 +42,6 @@
                         id="checkboxIsElectronicDocument"
                         v-model="checkboxIsElectronicDocument"
                         color="#1e90ff"
-                        @change="hideElectronicDocumentInputs()"
                       />
                     </v-row>
                   </span>
@@ -180,7 +179,7 @@
                     <h4><label>Auteurs (Facultatif)</label></h4>
                     <v-combobox
                       id="inputAuthorsMain"
-                      v-model="selectAuthorsMain"
+                      v-model="itemsAuthorsMain"
                       placeholder="Ex. de valeur : Dupont, S., M."
                       class="text-black font-weight-black"
                       :items="itemsAuthorsMain"
@@ -299,8 +298,7 @@
                         id="inputDoiOrUrlMain"
                         v-model="inputDoiOrUrlMain"
                         class="text-black font-weight-black"
-                        :items="['DOI', 'URL']"
-                        @update:modelValue="changeTextInputUrlMain()"
+                        :items="['DOI&nbsp;:', 'URL&nbsp;:']"
                       />
                       <v-text-field
                         id="inputUrlMain"
@@ -323,7 +321,7 @@
                       <h4><label>Auteurs (Facultatif)</label></h4>
                       <v-combobox
                         id="inputAuthorsInside"
-                        v-model="selectAuthorsInside"
+                        v-model="itemsAuthorsInside"
                         placeholder="Ex. de valeur : Dupont, S., M."
                         class="text-black font-weight-black"
                         :items="itemsAuthorsInside"
@@ -457,18 +455,39 @@
     },
     methods: {
       addAuthorSelectMain (event) {
-        this.itemsAuthorsMain = this.selectAuthorsMain
+        this.itemsAuthorsMain = event
       },
       addAuthorSelectInside (event) {
-        this.itemsAuthorsInside = this.selectAuthorsInside
+        this.itemsAuthorsInside = event
       },
-      buildReference () {
+      buildReference (isBuildingRefByPPN = false) {
+        if (!isBuildingRefByPPN) {
+          this.selectAuthorsMain = []
+        }
         if (Array.isArray(this.selectAuthorsMain) && this.selectAuthorsMain.length > 0) {
-          this.selectAuthorsMain = this.addAuthors(this.selectAuthorsMain)
+          if (isBuildingRefByPPN && this.itemsAuthorsMain.length === 0) {
+            this.itemsAuthorsMain = this.addAuthors(this.selectAuthorsMain)[0]
+            this.selectAuthorsMain = this.addAuthors(this.selectAuthorsMain)[1]
+          } else {
+            if (Array.isArray(this.selectAuthorsMain) && this.selectAuthorsMain.length > 0) {
+              this.selectAuthorsMain = this.addAuthors(this.selectAuthorsMain)[1]
+              this.selectAuthorsMain = this.addAuthors(this.itemsAuthorsMain)[1]
+            } else {
+              this.selectAuthorsMain = []
+            }
+          }
+        } else {
+          if (this.itemsAuthorsMain.length > 0) {
+            this.selectAuthorsMain = this.addAuthors(this.selectAuthorsMain)[1]
+            this.selectAuthorsMain = this.addAuthors(this.itemsAuthorsMain)[1]
+          }
         }
-        if (Array.isArray(this.selectAuthorsInside) && this.selectAuthorsInside.length > 0) {
-          this.selectAuthorsInside = this.addAuthors(this.selectAuthorsInside)
+        if (Array.isArray(this.itemsAuthorsInside) && this.itemsAuthorsInside.length > 0) {
+          this.selectAuthorsInside = this.addAuthors(this.itemsAuthorsInside)[1]
+        } else {
+          this.selectAuthorsInside = []
         }
+
         this.bibliographicReferenceInsidePublication = this.createInsidePublication()
         this.bibliographicReferenceMainPublication = this.createMainPublication()
 
@@ -561,7 +580,10 @@
           facultativeLinkingWord = ''
         }
 
-        return elementsExceptLastOneArray + facultativeLinkingWord + lastElementArray
+        return [
+          [elementsExceptLastOneArray, lastElementArray[0]],
+          [elementsExceptLastOneArray + facultativeLinkingWord + lastElementArray],
+        ]
       },
       addCommaBetweenExceptLastOne (arrayOfElements) {
         return arrayOfElements.join(', ')
@@ -572,9 +594,9 @@
                      this.inputDateFirstMain ? '[' + this.inputDateFirstMain + ']' : '',
                      this.inputDateMain ? '(' + this.inputDateMain + ')&nbsp;:' : '(s.d.)&nbsp;:',
                      this.inputPagesMain ? this.inputPagesMain : '',
+                     this.inputTitleMain ? '<i>' + this.inputTitleMain + '</i>' : 's.t.',
                      this.inputEditorMain ? this.inputEditorMain : '',
                      this.inputNumberEditorMain ? this.inputNumberEditorMain : '',
-                     this.inputTitleMain ? '<i>' + this.inputTitleMain + '</i>' : 's.t.',
                      this.inputLocationMain ? this.inputLocationMain : '',
                      this.inputBonusInfoEditionMain ? this.inputBonusInfoEditionMain : '',
                      this.inputRomanNumberMain ? this.inputRomanNumberMain : '',
@@ -582,15 +604,15 @@
                      this.inputUniversityMain ? this.inputUniversityMain : '',
                      this.inputDateElectronicUploadMain ? ' [En ligne], mis en ligne le ' + this.inputDateElectronicUploadMain : '',
                      this.inputDateElectronicConsultMain ? 'consulté le ' + this.inputDateElectronicConsultMain : '',
-                     this.inputDoiOrUrlMain ? ' :  ' + this.inputDoiOrUrlMain : '',
-                     this.inputUrlMain ? this.inputUrlMain : '']
+                     this.inputDoiOrUrlMain ? this.inputDoiOrUrlMain : '',
+                     this.inputDoiOrUrlMain && this.inputUrlMain ? this.inputUrlMain : '']
 
         const str = arr.join(', ') + '.'
 
         return str
       },
       createInsidePublication () {
-        const arr = [this.selectAuthorsMain.length > 0 ? this.selectAuthorsMain : 's.n. ',
+        const arr = [this.selectAuthorsInside.length > 0 ? this.selectAuthorsInside : 's.n. ',
                      this.inputEdOrDirOrCollInside ? this.inputEdOrDirOrCollInside : '',
                      this.inputDateInside ? this.inputDateInside : '',
                      this.inputDateFirstInside ? this.inputDateFirstInside : '',
@@ -627,7 +649,7 @@
                 }
                 document.getElementById('resultInnerContainerSudocApi').outerHTML = htmlDataFields.innerHTML
                 this.fillsBiblioInputsBook(htmlDataFields)
-                this.buildReference()
+                this.buildReference(true)
               }
             }).catch(error => {
               console.error({ error })
@@ -687,6 +709,8 @@
           editor = this.getSingleChildValue(document.getElementById('461').children, 't')
           numberEditor = this.getSingleChildValue(document.getElementById('461').children, 'v')
         }
+        this.programmaticAuthors = []
+        this.itemsAuthorsMain = []
         if (this.programmaticAuthors.length === 0) {
           for (let iAuthorsTag = 0; authorsTag.length; iAuthorsTag++) {
             if (document.getElementById(authorsTag[iAuthorsTag]) !== null &&
@@ -705,7 +729,7 @@
           university = this.getSingleChildValue(document.getElementById('711').children, 'a')
         }
         this.inputBookOrArticle = 'Livre' // L'API ne permet pas de distinguer Ouvrage et Article sur le SUDOC.
-        if (this.inputTitleMain) { this.inputTitleMain = title }
+        this.inputTitleMain = title
         this.inputEdOrDirOrCollMain = edOrDirOrColl
         this.inputDateMain = datePub
         this.inputLocationMain = location
@@ -730,6 +754,7 @@
             firstNamesArray.push((firstName.slice(0, 1)))
           }
           this.programmaticAuthors.push(lastName + ', ' + firstNamesArray.join('. ') + '.')
+          this.selectAuthorsMain = []
           this.selectAuthorsMain = this.programmaticAuthors
 
           document.getElementById(tagId).parentNode.removeChild(document.getElementById(tagId))
@@ -744,7 +769,7 @@
         let childInnerHTML = ''
         for (let iChildren = 0; iChildren < children.length; iChildren++) {
           childOuterHTML = children[iChildren].outerHTML
-          childInnerHTML = children[iChildren].innerHTM
+          childInnerHTML = children[iChildren].innerHTML
           if (!(childOuterHTML.includes('code="' + subFieldCodeToExclude + '"'))) {
             childrenValues.push(childInnerHTML)
           }
