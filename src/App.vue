@@ -529,11 +529,15 @@
       },
       hideIsContributionCheckBox (event) {
         if (event === 'Livre') {
+          if (document.getElementById('inputPPN').value !== undefined && document.getElementById('inputPPN').value.length > 0) {
+            this.isInputPPNUnfilled = false
+          }
           this.selectIsBook = true
         } else {
           this.inputShortCitationMain = 'Non'
           this.inputShortCitationBool = false
           this.selectIsBook = false
+          this.isInputPPNUnfilled = true // We should not be able to use SUDOC XML Query with an article
         }
       },
       hideShortCitationCheckbox (event) {
@@ -648,7 +652,7 @@
                   document.getElementById('resultOuterContainerSudocApi').innerHTML = '<div id="resultInnerContainerSudocApi">...</div>'
                 }
                 document.getElementById('resultInnerContainerSudocApi').outerHTML = htmlDataFields.innerHTML
-                this.fillsBiblioInputsBook(htmlDataFields)
+                this.fillsBiblioInputsBook()
                 this.buildReference(true)
               }
             }).catch(error => {
@@ -661,7 +665,7 @@
         dom.innerHTML = str
         return dom
       },
-      fillsBiblioInputsBook (htmlDataFields) {
+      fillsBiblioInputsBook () {
         document.getElementById('checkboxIsElectronicDocument').checked = false
         document.getElementById('checkboxInsidePublication').checked = false
         document.getElementById('inputShortCitationMain').value = 1
